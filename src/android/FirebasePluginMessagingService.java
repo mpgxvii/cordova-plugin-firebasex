@@ -32,6 +32,22 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
     static final String defaultLargeIconName = "notification_icon_large";
 
 
+    // RADAR Custom method for handling upstream messages
+    @Override
+    public void onMessageSent(String msgId) {
+        super.onMessageSent(msgId);
+        Log.d(TAG, "Message sent +++++++++++++++++: " + msgId);
+        FirebasePlugin.sendUpstreamCallback(msgId, PluginResult.Status.OK, "Success");
+    }
+
+    // RADAR Custom method for handling upstream messages
+    @Override
+    public void onSendError(String msgId, Exception e) {
+        super.onSendError(msgId, e);
+        Log.e(TAG, "Error sending upstream message -----------------: " + e + " " + msgId);
+        FirebasePlugin.sendUpstreamCallback(msgId, PluginResult.Status.ERROR, "Error");
+    }
+    
     /**
      * Called if InstanceID token is updated. This may occur if the security of
      * the previous token had been compromised. Note that this is called when the InstanceID token

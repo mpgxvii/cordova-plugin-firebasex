@@ -107,6 +107,15 @@ exports.listChannels = function (success, error) {
     exec(success, error, "FirebasePlugin", "listChannels", []);
 };
 
+// Notifications - Custom RADAR
+exports.setSenderId = function (id, success, error) {
+    exec(success, error, "FirebasePlugin", "setSenderId", [id]);
+};
+  
+exports.upstream = function(data, success, error) {
+    exec(success, error, 'FirebasePlugin', 'upstream', [data]);
+};
+
 // Analytics
 exports.setAnalyticsCollectionEnabled = function (enabled, success, error) {
     exec(success, error, "FirebasePlugin", "setAnalyticsCollectionEnabled", [!!enabled]);
@@ -198,7 +207,6 @@ exports.isPerformanceCollectionEnabled = function (success, error) {
 exports.clearAllNotifications = function (success, error) {
   exec(success, error, "FirebasePlugin", "clearAllNotifications", []);
 };
-
 
 // Crashlytics
 exports.setCrashlyticsCollectionEnabled = function (enabled, success, error) {

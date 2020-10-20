@@ -12,6 +12,15 @@ export interface IChannelOptions {
 }
 
 export interface FirebasePlugin {
+    setSenderId(
+        id: string
+    ): void
+    upstream(
+        data: any
+    ): void
+    setDeliveryMetricsExportToBigQuery(
+        setEnabled: boolean
+    ): void
     getId(
         success: (value: string) => void,
         error: (err: string) => void

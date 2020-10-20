@@ -52,6 +52,10 @@
 - (void)sendApnsToken:(NSString*)token;
 - (void)clearAllNotifications:(CDVInvokedUrlCommand *)command;
 
+// Remote notifications - Custom RADAR
+- (void)setSenderId:(CDVInvokedUrlCommand*)command;
+- (void)upstream:(CDVInvokedUrlCommand*)command;
+
 // Analytics
 - (void)setAnalyticsCollectionEnabled:(CDVInvokedUrlCommand*)command;
 - (void)isAnalyticsCollectionEnabled:(CDVInvokedUrlCommand*)command;
