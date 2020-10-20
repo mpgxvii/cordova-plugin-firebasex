@@ -63,6 +63,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.RemoteMessage;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
@@ -396,8 +397,8 @@ public class FirebasePlugin extends CordovaPlugin {
                 try {
                     if (FCM_PROJECT_SENDER_ID != null) callbackContext.success();
                 } catch (Exception e) {
-                    Crashlytics.logException(e);
-                    callbackContext.error(e.getMessage());
+                    handleExceptionWithContext(e, callbackContext);
+                    e.printStackTrace();
                 }
             }
         });
@@ -413,7 +414,7 @@ public class FirebasePlugin extends CordovaPlugin {
 		Log.d(TAG, "Sending upstream message ...");
 		cordova.getThreadPool().execute(new Runnable() {
 			public void run() {
-				try{
+				try {
 					HashMap<String, String> map = new HashMap<String, String>();
 					Iterator<?> keys = data.keys();
 
@@ -432,8 +433,9 @@ public class FirebasePlugin extends CordovaPlugin {
 							.setData(map)
 							.setTtl(900)
 							.build());
-				}catch(Exception e){
-					callbackContext.error(e.getMessage());
+				} catch(Exception e) {
+					handleExceptionWithContext(e, callbackContext);
+                    e.printStackTrace();
 				}
 			}
 		});
