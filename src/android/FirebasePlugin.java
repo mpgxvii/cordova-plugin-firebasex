@@ -63,6 +63,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.RemoteMessage;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
@@ -140,6 +141,13 @@ public class FirebasePlugin extends CordovaPlugin {
 
     private Map<String, ListenerRegistration> firestoreListeners = new HashMap<String, ListenerRegistration>();
 
+    // RADAR - Cache upstream callbacks
+    private static final HashMap<String, CallbackContext> upstreamCallbackCache = new HashMap<String, CallbackContext>();
+
+    // RADAR - Upstream vars
+    public static String FCM_PROJECT_SENDER_ID = null;
+    public static final String FCM_SERVER_CONNECTION = "@gcm.googleapis.com";
+
     @Override
     protected void pluginInitialize() {
         instance = this;
@@ -198,13 +206,19 @@ public class FirebasePlugin extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         try{
-            if (action.equals("getId")) {
+            if (action.equals("setSenderId")) {
+                this.setSenderId(callbackContext, args.getString(0));
+            } else if (action.equals("upstream")) {
+                this.upstream(callbackContext, args.getJSONObject(0));
+            } else if (action.equals("setDeliveryMetricsExportToBigQuery")) {
+                this.setDeliveryMetricsExportToBigQuery(callbackContext, args.getBoolean(0));
+            } else if (action.equals("getId")) {
                 this.getId(callbackContext);
             } else if (action.equals("getToken")) {
                 this.getToken(callbackContext);
             } else if (action.equals("hasPermission")) {
                 this.hasPermission(callbackContext);
-            }else if (action.equals("subscribe")) {
+            } else if (action.equals("subscribe")) {
                 this.subscribe(callbackContext, args.getString(0));
             } else if (action.equals("unsubscribe")) {
                 this.unsubscribe(callbackContext, args.getString(0));
@@ -370,6 +384,88 @@ public class FirebasePlugin extends CordovaPlugin {
             return false;
         }
         return true;
+    }
+
+    /**
+     * RADAR custom method to support upstream mesasging
+     */
+    public void setSenderId(final CallbackContext callbackContext, final String id) {
+        Log.d(TAG, "Setting sender ID ...");
+        FCM_PROJECT_SENDER_ID = id;
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    if (FCM_PROJECT_SENDER_ID != null) callbackContext.success();
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    /**
+     * RADAR custom method to support upstream mesasging
+     */
+    private void upstream(final CallbackContext callbackContext, final JSONObject data) {
+ 		if(FCM_PROJECT_SENDER_ID == null) {
+			callbackContext.error("FCM Sender Id is null, please set it first using setSenderId()");
+		}
+		Log.d(TAG, "Sending upstream message ...");
+		cordova.getThreadPool().execute(new Runnable() {
+			public void run() {
+				try {
+					HashMap<String, String> map = new HashMap<String, String>();
+					Iterator<?> keys = data.keys();
+
+					while( keys.hasNext() ){
+						String key = (String)keys.next();
+						String value = data.getString(key);
+						map.put(key, value);
+
+						Log.d(TAG, "Key : " + key + ", Value : " + value);
+					}
+
+                    upstreamCallbackCache.put(map.get("eventId"), callbackContext);
+					FirebaseMessaging fm = FirebaseMessaging.getInstance();
+					fm.send(new RemoteMessage.Builder(FCM_PROJECT_SENDER_ID + FCM_SERVER_CONNECTION)
+							.setMessageId(map.get("eventId"))
+							.setData(map)
+							.setTtl(900)
+							.build());
+				} catch(Exception e) {
+					handleExceptionWithContext(e, callbackContext);
+                    e.printStackTrace();
+				}
+			}
+		});
+    }
+
+    /**
+     * RADAR custom method to support upstream mesasging
+     */
+    public static void sendUpstreamCallback(String id, PluginResult.Status status, String msg){
+        PluginResult result = new PluginResult(status, msg);
+        result.setKeepCallback(true);
+        CallbackContext context = upstreamCallbackCache.get(id);
+        if(context != null && result != null) context.sendPluginResult(result);
+    }
+
+    /**
+     * RADAR custom method to export delivery metrics to BigQuery
+     */
+    private void setDeliveryMetricsExportToBigQuery(final CallbackContext callbackContext, final boolean enabled) {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    FirebaseMessaging.getInstance().setDeliveryMetricsExportToBigQuery(true);
+                    callbackContext.success();
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     @Override

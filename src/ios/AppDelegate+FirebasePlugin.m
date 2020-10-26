@@ -104,6 +104,13 @@ static bool shouldEstablishDirectChannel = false;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(tokenRefreshNotification:)
                                                      name:kFIRInstanceIDTokenRefreshNotification object:nil];
 
+         // RADAR - Add observer for upstream messages callback.
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sendDataMessageSuccess:)
+                                                 name:FIRMessagingSendSuccessNotification object:nil];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sendDataMessageFailure:)
+                                                 name:FIRMessagingSendErrorNotification object:nil];                                             
+
         self.applicationInBackground = @(YES);
         
     }@catch (NSException *exception) {
@@ -111,6 +118,16 @@ static bool shouldEstablishDirectChannel = false;
     }
 
     return YES;
+}
+
+// RADAR Custom method for upstream message failure
+- (void)sendDataMessageFailure:(NSNotification *)notification {
+    NSLog(@"Send error: %@", notification);
+}
+
+// RADAR Custom method for upstream message success
+- (void)sendDataMessageSuccess:(NSNotification *)notification {
+    NSLog(@"Send success: %@", notification);
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
