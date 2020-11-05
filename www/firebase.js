@@ -116,6 +116,12 @@ exports.upstream = function(data, success, error) {
     exec(success, error, 'FirebasePlugin', 'upstream', [data]);
 };
 
+// Notifications - Custom RADAR - Android Only
+
+exports.setDeliveryMetricsExportToBigQuery = function(enabled, success, error) {
+    exec(success, error, 'FirebasePlugin', 'setDeliveryMetricsExportToBigQuery', [!!enabled]);
+};
+
 // Analytics
 exports.setAnalyticsCollectionEnabled = function (enabled, success, error) {
     exec(success, error, "FirebasePlugin", "setAnalyticsCollectionEnabled", [!!enabled]);
